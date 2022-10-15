@@ -8,6 +8,6 @@
 *.log
 *.log.*
 *.sig
-
+**/*__pycache__
 pkg/
 src/
