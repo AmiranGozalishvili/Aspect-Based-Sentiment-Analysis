@@ -1,15 +1,13 @@
-from fastapi import FastAPI
-import warnings
-import time
-
 import pandas as pd
 import spacy
-from monkeylearn import MonkeyLearn
-from tqdm.notebook import tqdm_notebook
-
+import time
+import warnings
 from analysis import display_ngram_frequency
 from datapreprocess import *
+from fastapi import FastAPI
+from monkeylearn import MonkeyLearn
 from predictpolarity import dependency_matching, polarity
+from tqdm.notebook import tqdm_notebook
 from word_clouds import generate_wordcloud
 
 app = FastAPI()
@@ -90,7 +88,7 @@ def opinion_parser(text):
 
 
 dataset["Opinion"] = dataset["Review Text"].progress_apply(opinion_parser)
-print("opinion parser",dataset.head())
+print("opinion parser", dataset.head())
 
 # predict polarity
 dataset["Polarity"] = dataset["Opinion"].progress_apply(polarity)
@@ -118,8 +116,6 @@ descriptors_positive_opinions = " ".join(positives["Descriptors"].tolist())
 
 display_ngram_frequency(descriptors_negative_opinions, n=3, display=10)
 
-
-
 # wordclouds
 
 # WordCloud: descriptors extracted from negative opinions
@@ -131,21 +127,15 @@ generate_wordcloud(descriptors_positive_opinions)
 """## Examples"""
 
 opinion_texts = ["the color was beautiful",
-                    "gorgeous colors",
-                    "i ordered the red, it is a beautiful, vibrant, festive color",
-                    "the colors were very bland and the flowers just hang",
-                    "the color was not vibrant like photos show",
-                    ]
+                 "gorgeous colors",
+                 "i ordered the red, it is a beautiful, vibrant, festive color",
+                 "the colors were very bland and the flowers just hang",
+                 "the color was not vibrant like photos show",
+                 ]
+df_examples = pd.DataFrame(opinion_texts, columns=["Opinion"])
+df_examples["Polarity"] = df_examples["Opinion"].apply(polarity)  # polarity
+df_examples['Descriptors'] = df_examples['Opinion'].apply(dependency_matching)  # extract adjectives/adverbs
 
-# create new dataset with columns opinion(text), recomended ind, polarity, description(dependency matching)
-
-new_dataset = dataset[['Review Text', 'Recommended IND', 'Department Name']]
-###
-
-new_dataset = pd.DataFrame(opinion_texts, columns=["Opinion"])
-new_dataset["Polarity"] = new_dataset["Opinion"].apply(polarity)  # polarity
-new_dataset['Descriptors'] = new_dataset['Opinion'].apply(dependency_matching) # extract adjectives/adverbs
-print(new_dataset.columns)
 
 # 1 take text and apply (progress_apply(opinion_parser))  Review text to opinion
 # 2 take opinion text and apply (progress_apply(polarity))  opinion to polarity
@@ -153,57 +143,12 @@ print(new_dataset.columns)
 
 @app.get('/')
 def get_root():
-	return {'message': 'Welcome to ASBA API'}
+    return {'message': 'Welcome to ASBA API'}
+
 
 @app.get('/ASBA')
 def textanalyze(text):
     Opinion_text = opinion_parser(text)
     Polarity = polarity(text)
     Descriptors = dependency_matching(text)
-    return ("Opinion Text",Opinion_text), ("Polarity", Polarity), ("Descriptor",Descriptors)
-
-# df_examples = pd.DataFrame(opinion_texts, columns=["Opinion"])
-# df_examples["Polarity"] = df_examples["Opinion"].apply(polarity)  # polarity
-# df_examples['Descriptors'] = df_examples['Opinion'].apply(dependency_matching)  # extract adjectives/adverbs
-
-
-
-#
-#
-# @app.get('/ASBA')
-# def pos_neg(text):
-#     return ("neagative", descriptors_negative_opinions), ("positive",descriptors_positive_opinions)
-#
-# # return columns (opinion, polarity, description)
-#
-
-
-#
-# @app.post('/ASBA')
-# def polarity(opinion_texts:list=None):
-#     if not opinion_texts:
-#
-#         opinion_texts = ["the color was beautiful",
-#                     "gorgeous colors",
-#                     "i ordered the red, it is a beautiful, vibrant, festive color",
-#                     "the colors were very bland and the flowers just hang",
-#                     "the color was not vibrant like photos show",
-#                     ]
-#     df_examples = pd.DataFrame(eval(opinion_texts, columns=["Opinion"]))
-#     df_examples["Polarity"] = df_examples["Opinion"].apply(polarity)  # polarity
-#     df_examples['Descriptors'] = df_examples['Opinion'].apply(dependency_matching)  # extract adjectives/adverbs
-#
-#     positives = df_examples[df_examples["Polarity"] > 0]  # polarity greater than 0
-#     negatives = df_examples[df_examples["Polarity"] < 0]  # polarity less than 0
-#
-#     # list all negative descriptors in a single string
-#     descriptors_negative_opinions = " ".join(negatives["Descriptors"].tolist())
-#
-#     # positives
-#     descriptors_positive_opinions = " ".join(positives["Descriptors"].tolist())
-#
-#     return {
-#         "positive_descriptor" : descriptors_positive_opinions,
-#         "negative_descriptor" : descriptors_negative_opinions,
-#     }
-
+    return ("Opinion Text", Opinion_text), ("Polarity", Polarity), ("Descriptor", Descriptors)
